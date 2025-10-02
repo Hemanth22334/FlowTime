@@ -10,6 +10,9 @@ import TaskList from "@/components/dashboard/TaskList";
 import PomodoroTimer from "@/components/dashboard/PomodoroTimer";
 import AddTaskDialog from "@/components/dashboard/AddTaskDialog";
 import AISuggestions from "@/components/dashboard/AISuggestions";
+import CalendarView from "@/components/dashboard/CalendarView";
+import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
+import SpacedRepetition from "@/components/dashboard/SpacedRepetition";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -100,18 +103,25 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Left Column - Stats and Timer */}
             <div className="space-y-6">
               <StatsCards userId={session.user.id} />
               <PomodoroTimer userId={session.user.id} />
               <AISuggestions userId={session.user.id} />
+              <SpacedRepetition userId={session.user.id} />
             </div>
 
             {/* Right Column - Tasks */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
               <TaskList userId={session.user.id} />
             </div>
+          </div>
+
+          {/* Bottom Row - Calendar and Analytics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CalendarView userId={session.user.id} />
+            <AnalyticsChart userId={session.user.id} />
           </div>
         </main>
       </div>

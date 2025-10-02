@@ -28,6 +28,9 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
     priority: "medium" as "low" | "medium" | "high" | "urgent",
     deadline: "",
     estimated_time: "",
+    is_recurring: false,
+    recurrence_pattern: "daily",
+    recurrence_interval: "1",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,6 +45,9 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
         priority: formData.priority,
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
         estimated_time: formData.estimated_time ? parseInt(formData.estimated_time) : null,
+        is_recurring: formData.is_recurring,
+        recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
+        recurrence_interval: formData.is_recurring ? parseInt(formData.recurrence_interval) : null,
       });
 
       if (error) throw error;
@@ -53,6 +59,9 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
         priority: "medium",
         deadline: "",
         estimated_time: "",
+        is_recurring: false,
+        recurrence_pattern: "daily",
+        recurrence_interval: "1",
       });
       onOpenChange(false);
     } catch (error: any) {
@@ -94,6 +103,20 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="estimated_time">Time (minutes)</Label>
+            <Input
+              id="estimated_time"
+              type="number"
+              placeholder="30"
+              value={formData.estimated_time}
+              onChange={(e) =>
+                setFormData({ ...formData, estimated_time: e.target.value })
+              }
+              className="glass"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
@@ -114,30 +137,77 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="estimated_time">Time (minutes)</Label>
+              <Label htmlFor="deadline">Deadline</Label>
               <Input
-                id="estimated_time"
-                type="number"
-                placeholder="30"
-                value={formData.estimated_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, estimated_time: e.target.value })
-                }
+                id="deadline"
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
                 className="glass"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="deadline">Deadline</Label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              className="glass"
-            />
+            <Label htmlFor="is_recurring">Recurring Task</Label>
+            <div className="flex items-center gap-2">
+              <input
+                id="is_recurring"
+                type="checkbox"
+                checked={formData.is_recurring}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_recurring: e.target.checked })
+                }
+                className="w-4 h-4 rounded border-border"
+              />
+              <Label htmlFor="is_recurring" className="cursor-pointer">
+                Make this a recurring task
+              </Label>
+            </div>
           </div>
+
+          {formData.is_recurring && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="recurrence_pattern">Repeat</Label>
+                <Select
+                  value={formData.recurrence_pattern}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, recurrence_pattern: value })
+                  }
+                >
+                  <SelectTrigger className="glass">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent className="glass-strong">
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recurrence_interval">Every</Label>
+                <Input
+                  id="recurrence_interval"
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  value={formData.recurrence_interval}
+                  onChange={(e) =>
+                    setFormData({ ...formData, recurrence_interval: e.target.value })
+                  }
+                  className="glass"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.recurrence_pattern === "daily" && "day(s)"}
+                  {formData.recurrence_pattern === "weekly" && "week(s)"}
+                  {formData.recurrence_pattern === "monthly" && "month(s)"}
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="flex gap-2 pt-4">
             <Button
