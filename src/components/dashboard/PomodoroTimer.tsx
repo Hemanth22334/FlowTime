@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Timer } from "lucide-react";
+import { Play, Pause, RotateCcw, Timer, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,7 +13,9 @@ const PomodoroTimer = ({ userId }: PomodoroTimerProps) => {
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -31,8 +33,39 @@ const PomodoroTimer = ({ userId }: PomodoroTimerProps) => {
     };
   }, [isRunning, timeLeft]);
 
+  const playNotificationSound = () => {
+    if (!soundEnabled) return;
+    
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
+      
+      const context = audioContextRef.current;
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+      
+      // Pleasant notification sound
+      oscillator.frequency.setValueAtTime(800, context.currentTime);
+      oscillator.frequency.setValueAtTime(600, context.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, context.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, context.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+      
+      oscillator.start(context.currentTime);
+      oscillator.stop(context.currentTime + 0.5);
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
+  };
+
   const handleTimerComplete = async () => {
     setIsRunning(false);
+    playNotificationSound();
 
     if (!isBreak) {
       // Log pomodoro session
@@ -41,11 +74,11 @@ const PomodoroTimer = ({ userId }: PomodoroTimerProps) => {
         duration: 25,
         completed: true,
       });
-      toast.success("Pomodoro completed! Time for a 5-minute break.");
+      toast.success("🎉 Pomodoro completed! Time for a 5-minute break.");
       setTimeLeft(5 * 60);
       setIsBreak(true);
     } else {
-      toast.success("Break completed! Ready for another pomodoro?");
+      toast.success("☕ Break completed! Ready for another pomodoro?");
       setTimeLeft(25 * 60);
       setIsBreak(false);
     }
@@ -115,6 +148,18 @@ const PomodoroTimer = ({ userId }: PomodoroTimerProps) => {
           className="glass"
         >
           <RotateCcw className="w-4 h-4" />
+        </Button>
+        <Button
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          variant="outline"
+          className="glass"
+          title={soundEnabled ? "Mute notifications" : "Enable notifications"}
+        >
+          {soundEnabled ? (
+            <Volume2 className="w-4 h-4" />
+          ) : (
+            <VolumeX className="w-4 h-4" />
+          )}
         </Button>
       </div>
     </Card>

@@ -9,6 +9,7 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import TaskList from "@/components/dashboard/TaskList";
 import PomodoroTimer from "@/components/dashboard/PomodoroTimer";
 import AddTaskDialog from "@/components/dashboard/AddTaskDialog";
+import AISuggestions from "@/components/dashboard/AISuggestions";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -104,6 +105,7 @@ const Dashboard = () => {
             <div className="space-y-6">
               <StatsCards userId={session.user.id} />
               <PomodoroTimer userId={session.user.id} />
+              <AISuggestions userId={session.user.id} />
             </div>
 
             {/* Right Column - Tasks */}
