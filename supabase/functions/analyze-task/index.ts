@@ -60,38 +60,46 @@ serve(async (req) => {
       ? Math.round(pomodoroSessions.reduce((acc, s) => acc + s.duration, 0) / pomodoroSessions.length)
       : 25;
 
-    const systemPrompt = `You are an expert task analyst using first principles thinking. Break down tasks into fundamental, actionable steps.
+    const systemPrompt = `You are an expert productivity coach who helps people succeed at tasks by providing comprehensive preparation guidance.
 
-FIRST PRINCIPLES APPROACH:
-1. Identify the core objective - what is the fundamental goal?
-2. Break into irreducible components - what are the atomic actions needed?
-3. Determine dependencies - what must happen before what?
-4. Estimate time realistically - consider complexity and skill level
-5. Optimize sequence - arrange steps for maximum efficiency
+YOUR APPROACH:
+1. Start with environment and workspace preparation
+2. List important precautions and what to avoid
+3. Provide practical tips and best practices
+4. Break down the actual work into clear steps
+5. Include review and completion steps
 
 USER CONTEXT:
 - Average Pomodoro session: ${avgPomodoroTime} minutes
-- Recent task completion patterns: ${userTasks?.length || 0} tasks tracked
-- Task priority: ${priority}
-- Estimated total time: ${estimated_time || 'not specified'} minutes
+- Recent task patterns: ${userTasks?.length || 0} tasks tracked
+- Priority: ${priority}
+- Estimated time: ${estimated_time || 'not specified'} minutes
 - Deadline: ${deadline || 'not specified'}
 
-STEP BREAKDOWN RULES:
-- Each step should be 15-60 minutes (ideally 1-2 Pomodoro sessions)
-- Steps must be concrete and actionable
-- Include preparation, execution, and review phases
-- Add buffer time for complex steps (20-30%)
-- Consider cognitive load and energy requirements`;
+STEP CATEGORIES TO INCLUDE:
+1. PREPARATION (focus_type: "preparation"): Environment setup, workspace organization, gathering materials
+2. PRECAUTIONS (focus_type: "review"): Safety measures, common mistakes to avoid, important warnings
+3. EXECUTION (focus_type: "execution"): The actual work steps in logical order
+4. TIPS & BEST PRACTICES (focus_type: "creative"): Pro tips, efficiency hacks, quality improvements
+5. REVIEW (focus_type: "review"): Checking work, final touches, cleanup
 
-    const userPrompt = `Task Title: ${title}
+TIME ALLOCATION:
+- Preparation steps: 5-15 minutes each
+- Work steps: 15-45 minutes each
+- Tips can be quick reminders: 2-5 minutes
+- Each step should fit within a Pomodoro session`;
+
+    const userPrompt = `Task: ${title}
 ${description ? `Description: ${description}` : ''}
 
-Analyze this task using first principles and break it down into logical, time-allocated steps. Consider:
-- What is the fundamental goal?
-- What are the irreducible components?
-- What dependencies exist?
-- What's the optimal sequence?
-- How long will each component realistically take?`;
+Create a comprehensive step-by-step guide including:
+1. How to prepare the environment and workspace
+2. Important precautions and things to avoid
+3. The actual work broken into clear steps
+4. Helpful tips and best practices for success
+5. How to review and complete the task properly
+
+Make it practical and actionable - like you're coaching someone to succeed at this task.`;
 
     const body: any = {
       model: "google/gemini-2.5-flash",
@@ -104,18 +112,18 @@ Analyze this task using first principles and break it down into logical, time-al
           type: "function",
           function: {
             name: "break_down_task",
-            description: "Break down a task into sequential, time-allocated steps using first principles analysis",
+            description: "Provide comprehensive task guidance including preparation, precautions, execution steps, and tips",
             parameters: {
               type: "object",
               properties: {
                 analysis: {
                   type: "object",
                   properties: {
-                    core_objective: { type: "string", description: "The fundamental goal of this task" },
+                    core_objective: { type: "string", description: "What the task aims to achieve" },
                     complexity_level: { type: "string", enum: ["low", "medium", "high"], description: "Overall complexity" },
-                    key_challenges: { type: "array", items: { type: "string" }, description: "Main challenges to overcome" }
+                    key_success_factors: { type: "array", items: { type: "string" }, description: "What will make this task successful" }
                   },
-                  required: ["core_objective", "complexity_level", "key_challenges"]
+                  required: ["core_objective", "complexity_level", "key_success_factors"]
                 },
                 steps: {
                   type: "array",
@@ -124,17 +132,17 @@ Analyze this task using first principles and break it down into logical, time-al
                     properties: {
                       step_order: { type: "number", description: "Sequential order (1, 2, 3...)" },
                       title: { type: "string", description: "Clear, actionable step title" },
-                      description: { type: "string", description: "Detailed explanation of what to do" },
+                      description: { type: "string", description: "Detailed explanation - be specific and practical" },
                       estimated_duration: { type: "number", description: "Time in minutes" },
                       dependencies: { type: "array", items: { type: "number" }, description: "Step numbers that must be completed first" },
                       difficulty: { type: "string", enum: ["easy", "medium", "hard"], description: "Step difficulty" },
-                      focus_type: { type: "string", enum: ["research", "creative", "analytical", "execution", "review"], description: "Type of work" }
+                      focus_type: { type: "string", enum: ["preparation", "creative", "analytical", "execution", "review"], description: "preparation=setup/environment, execution=actual work, review=precautions/checks, creative=tips/best practices, analytical=planning" }
                     },
                     required: ["step_order", "title", "description", "estimated_duration", "dependencies", "difficulty", "focus_type"]
                   }
                 },
                 total_estimated_time: { type: "number", description: "Sum of all step durations in minutes" },
-                recommended_approach: { type: "string", description: "Overall strategy for tackling this task" }
+                recommended_approach: { type: "string", description: "Overall strategy and mindset for success" }
               },
               required: ["analysis", "steps", "total_estimated_time", "recommended_approach"],
               additionalProperties: false

@@ -97,9 +97,9 @@ export default function TaskStepsView({ taskId, userId }: TaskStepsViewProps) {
 
   const getFocusIcon = (focusType?: string) => {
     switch (focusType) {
-      case 'research': return '🔍';
-      case 'creative': return '🎨';
-      case 'analytical': return '📊';
+      case 'preparation': return '🛠️';
+      case 'creative': return '💡';
+      case 'analytical': return '📋';
       case 'execution': return '⚡';
       case 'review': return '✅';
       default: return '📝';
