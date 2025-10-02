@@ -99,6 +99,59 @@ export type Database = {
           },
         ]
       }
+      task_steps: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          dependencies: string[] | null
+          description: string | null
+          estimated_duration: number
+          id: string
+          step_order: number
+          task_id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration: number
+          id?: string
+          step_order: number
+          task_id: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration?: number
+          id?: string
+          step_order?: number
+          task_id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_steps_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed_at: string | null

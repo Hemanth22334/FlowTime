@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Brain, Loader2, CheckCircle2, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface AddTaskDialogProps {
   open: boolean;
@@ -20,8 +23,31 @@ interface AddTaskDialogProps {
   userId: string;
 }
 
+interface TaskStep {
+  step_order: number;
+  title: string;
+  description: string;
+  estimated_duration: number;
+  difficulty: string;
+  focus_type: string;
+  dependencies: number[];
+}
+
+interface TaskAnalysis {
+  analysis: {
+    core_objective: string;
+    complexity_level: string;
+    key_challenges: string[];
+  };
+  steps: TaskStep[];
+  total_estimated_time: number;
+  recommended_approach: string;
+}
+
 const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<TaskAnalysis | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -33,26 +59,110 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
     recurrence_interval: "1",
   });
 
+  const handleAnalyze = async () => {
+    if (!formData.title) {
+      toast.error("Please enter a task title first");
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-task`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          estimated_time: formData.estimated_time ? parseInt(formData.estimated_time) : null,
+          deadline: formData.deadline,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Analysis failed');
+      }
+
+      const analysis = await response.json();
+      setAiAnalysis(analysis);
+      
+      // Auto-fill estimated time if not set
+      if (!formData.estimated_time && analysis.total_estimated_time) {
+        setFormData({ ...formData, estimated_time: analysis.total_estimated_time.toString() });
+      }
+
+      toast.success("Task analyzed successfully! ✨", {
+        description: `${analysis.steps.length} steps generated`,
+      });
+    } catch (error: any) {
+      console.error("Analysis error:", error);
+      toast.error(error.message || "Failed to analyze task");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("tasks").insert({
-        user_id: userId,
-        title: formData.title,
-        description: formData.description || null,
-        priority: formData.priority,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
-        estimated_time: formData.estimated_time ? parseInt(formData.estimated_time) : null,
-        is_recurring: formData.is_recurring,
-        recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
-        recurrence_interval: formData.is_recurring ? parseInt(formData.recurrence_interval) : null,
-      });
+      // Insert the task
+      const { data: taskData, error: taskError } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: userId,
+          title: formData.title,
+          description: formData.description || null,
+          priority: formData.priority,
+          deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+          estimated_time: formData.estimated_time ? parseInt(formData.estimated_time) : null,
+          is_recurring: formData.is_recurring,
+          recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
+          recurrence_interval: formData.is_recurring ? parseInt(formData.recurrence_interval) : null,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (taskError) throw taskError;
 
-      toast.success("Task created successfully!");
+      // If we have AI analysis, insert the steps
+      if (aiAnalysis && aiAnalysis.steps.length > 0) {
+        const stepsToInsert = aiAnalysis.steps.map(step => ({
+          task_id: taskData.id,
+          user_id: userId,
+          step_order: step.step_order,
+          title: step.title,
+          description: step.description,
+          estimated_duration: step.estimated_duration,
+          dependencies: (step.dependencies || []).map(d => d.toString()),
+          completed: false,
+        }));
+
+        const { error: stepsError } = await supabase
+          .from("task_steps")
+          .insert(stepsToInsert);
+
+        if (stepsError) {
+          console.error("Error inserting steps:", stepsError);
+          toast.error("Task created but steps failed to save");
+        } else {
+          toast.success("Task created with AI breakdown! 🎉", {
+            description: `${aiAnalysis.steps.length} steps added`,
+          });
+        }
+      } else {
+        toast.success("Task created successfully!");
+      }
+
+      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -63,6 +173,7 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
         recurrence_pattern: "daily",
         recurrence_interval: "1",
       });
+      setAiAnalysis(null);
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || "Failed to create task");
@@ -209,22 +320,99 @@ const AddTaskDialog = ({ open, onOpenChange, userId }: AddTaskDialogProps) => {
             </>
           )}
 
-          <div className="flex gap-2 pt-4">
+          <div className="space-y-4 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 glass"
+              onClick={handleAnalyze}
+              disabled={analyzing || !formData.title}
+              className="w-full glass"
             >
-              Cancel
+              {analyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing with AI...
+                </>
+              ) : (
+                <>
+                  <Brain className="mr-2 h-4 w-4" />
+                  Analyze Task & Generate Steps
+                </>
+              )}
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-primary hover:bg-primary/90 glow-primary"
-            >
-              {loading ? "Creating..." : "Create Task"}
-            </Button>
+
+            {aiAnalysis && (
+              <Card className="glass-strong">
+                <CardContent className="pt-4 space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      AI Analysis
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {aiAnalysis.analysis.core_objective}
+                    </p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="outline" className="text-xs">
+                        {aiAnalysis.analysis.complexity_level} complexity
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {aiAnalysis.total_estimated_time} min total
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      {aiAnalysis.steps.length} Steps Generated
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {aiAnalysis.steps.map((step) => (
+                        <div key={step.step_order} className="text-xs p-2 bg-background/50 rounded">
+                          <div className="font-medium">
+                            {step.step_order}. {step.title}
+                          </div>
+                          <div className="text-muted-foreground flex items-center gap-2 mt-1">
+                            <Clock className="h-3 w-3" />
+                            {step.estimated_duration}min
+                            <Badge className="text-xs" variant="outline">
+                              {step.focus_type}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground italic">
+                    💡 {aiAnalysis.recommended_approach}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAiAnalysis(null);
+                  onOpenChange(false);
+                }}
+                className="flex-1 glass"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-primary hover:bg-primary/90 glow-primary"
+              >
+                {loading ? "Creating..." : aiAnalysis ? "Create with Steps" : "Create Task"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

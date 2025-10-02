@@ -13,6 +13,8 @@ import {
   ListTodo,
   Trash2,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -24,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import TaskStepsView from "./TaskStepsView";
 
 interface Task {
   id: string;
@@ -47,6 +50,7 @@ const TaskList = ({ userId }: TaskListProps) => {
   const [filterPriorities, setFilterPriorities] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -289,63 +293,85 @@ const TaskList = ({ userId }: TaskListProps) => {
           {filteredTasks.map((task, index) => (
             <div
               key={task.id}
-              className="glass p-4 rounded-lg hover-lift animate-fade-in"
+              className="glass rounded-lg hover-lift animate-fade-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={task.status === "completed"}
-                  onCheckedChange={() => toggleTaskStatus(task.id, task.status)}
-                  className="mt-1"
-                />
+              <div className="p-4">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={task.status === "completed"}
+                    onCheckedChange={() => toggleTaskStatus(task.id, task.status)}
+                    className="mt-1"
+                  />
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4
-                      className={`font-medium ${
-                        task.status === "completed"
-                          ? "line-through text-muted-foreground"
-                          : ""
-                      }`}
-                    >
-                      {task.title}
-                    </h4>
-                    <Badge className={getPriorityColor(task.priority)} variant="outline">
-                      {task.priority}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className={`font-medium ${
+                          task.status === "completed"
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        {task.title}
+                      </h4>
+                      <Badge className={getPriorityColor(task.priority)} variant="outline">
+                        {task.priority}
+                      </Badge>
+                    </div>
+
+                    {task.description && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {task.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      {task.deadline && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(new Date(task.deadline), "MMM d, yyyy")}
+                        </div>
+                      )}
+                      {task.estimated_time && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {task.estimated_time}m
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {task.description && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {task.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    {task.deadline && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(task.deadline), "MMM d, yyyy")}
-                      </div>
-                    )}
-                    {task.estimated_time && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {task.estimated_time}m
-                      </div>
-                    )}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                      className="hover:bg-accent"
+                    >
+                      {expandedTaskId === task.id ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteTask(task.id)}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteTask(task.id)}
-                  className="hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
               </div>
+
+              {expandedTaskId === task.id && (
+                <div className="px-4 pb-4 border-t border-border/50 pt-4">
+                  <TaskStepsView taskId={task.id} userId={userId} />
+                </div>
+              )}
             </div>
           ))}
         </div>

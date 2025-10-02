@@ -1,1 +1,10 @@
 project_id = "grupjayfhmdbmctpgkxx"
+
+[functions.ai-task-suggestions]
+verify_jwt = true
+
+[functions.generate-timetable]
+verify_jwt = true
+
+[functions.analyze-task]
+verify_jwt = true
