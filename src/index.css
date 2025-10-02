@@ -9,60 +9,60 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Background gradients for 3D glassmorphism effect */
-    --gradient-primary: linear-gradient(135deg, hsl(240 100% 20%), hsl(280 100% 30%), hsl(200 100% 40%));
-    --gradient-secondary: linear-gradient(135deg, hsl(190 100% 50%), hsl(270 100% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(240 100% 95%), hsl(280 100% 90%), hsl(200 100% 85%));
+    --gradient-secondary: linear-gradient(135deg, hsl(190 100% 90%), hsl(270 100% 85%));
     --gradient-accent: linear-gradient(90deg, hsl(280 100% 60%), hsl(190 100% 50%));
-    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(280 100% 60% / 0.3), transparent 70%);
+    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(280 100% 60% / 0.1), transparent 70%);
     
-    /* Core colors */
-    --background: 240 30% 8%;
-    --foreground: 210 40% 98%;
+    /* Core colors - Light theme */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
 
     /* Glass card colors with semi-transparency */
-    --card: 240 20% 12%;
-    --card-foreground: 210 40% 98%;
-    --card-glass: 240 20% 15% / 0.6;
+    --card: 0 0% 98%;
+    --card-foreground: 240 10% 10%;
+    --card-glass: 0 0% 100% / 0.7;
 
-    --popover: 240 20% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
 
     /* Vibrant primary colors */
     --primary: 280 100% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
     --primary-glow: 280 100% 70%;
 
     /* Accent colors */
     --secondary: 190 100% 50%;
-    --secondary-foreground: 240 30% 8%;
+    --secondary-foreground: 0 0% 100%;
     --secondary-glow: 190 100% 60%;
 
-    --muted: 240 20% 25%;
-    --muted-foreground: 215 20% 70%;
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 5% 40%;
 
     --accent: 270 100% 60%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 100%;
 
     /* Status colors */
     --destructive: 0 85% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 240 30% 8%;
+    --warning-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 240 20% 20%;
-    --input: 240 20% 15%;
+    --border: 240 10% 85%;
+    --input: 240 10% 95%;
     --ring: 280 100% 60%;
 
     --radius: 1rem;
 
     /* Shadows with glow effects */
-    --shadow-glass: 0 8px 32px 0 hsl(240 100% 10% / 0.37);
-    --shadow-glow-primary: 0 0 40px hsl(280 100% 60% / 0.5);
-    --shadow-glow-secondary: 0 0 40px hsl(190 100% 50% / 0.5);
+    --shadow-glass: 0 8px 32px 0 hsl(240 10% 50% / 0.1);
+    --shadow-glow-primary: 0 0 40px hsl(280 100% 60% / 0.2);
+    --shadow-glow-secondary: 0 0 40px hsl(190 100% 50% / 0.2);
   }
 }
 
