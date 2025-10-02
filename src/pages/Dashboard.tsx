@@ -13,6 +13,7 @@ import AISuggestions from "@/components/dashboard/AISuggestions";
 import CalendarView from "@/components/dashboard/CalendarView";
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
 import SpacedRepetition from "@/components/dashboard/SpacedRepetition";
+import Timetable from "@/components/dashboard/Timetable";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -112,8 +113,9 @@ const Dashboard = () => {
               <SpacedRepetition userId={session.user.id} />
             </div>
 
-            {/* Right Column - Tasks */}
+            {/* Right Column - Tasks & Timetable */}
             <div className="lg:col-span-2 space-y-6">
+              <Timetable userId={session.user.id} />
               <TaskList userId={session.user.id} />
             </div>
           </div>
